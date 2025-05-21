@@ -6,7 +6,7 @@
 /*   By: ayeap <ayeap@student.42kl.edu.my>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/29 19:14:14 by ayeap             #+#    #+#             */
-/*   Updated: 2025/05/01 14:43:08 by ayeap            ###   ########.fr       */
+/*   Updated: 2025/05/21 19:32:21 by ayeap            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,5 +20,6 @@
 # include <unistd.h> // write
 # include <fcntl.h> // open
 # include <string.h> // strerror
+# include <math.h>
 
 #endif

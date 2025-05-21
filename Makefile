@@ -6,7 +6,7 @@
 #    By: ayeap <ayeap@student.42kl.edu.my>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/04/29 12:06:13 by ayeap             #+#    #+#              #
-#    Updated: 2025/05/02 13:20:52 by ayeap            ###   ########.fr        #
+#    Updated: 2025/05/21 21:45:20 by ayeap            ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -26,6 +26,7 @@ LIBFT = library/libft.a
 
 SRC_DIR = src
 SRC_FILES = $(wildcard $(SRC_DIR)/*.c)
+# SRC_FILES = src/test.c
 # SRC = $(addprefix $(SRC_DIR)/, $(SRC_FILES))
 
 # BONUS_FILES = 
