@@ -2,11 +2,15 @@
 
 #define WIDTH 1280
 #define HEIGHT 720
+#define BLOCK 64
+#define DEBUG 1
 
 #define W 119
 #define A 97
 #define S 115
 #define D 100
+#define LEFT_ARROW 65361
+#define RIGHT_ARROW 65363
 
 #define PI 3.14159
 
@@ -20,6 +24,9 @@ typedef struct s_player
 	bool key_a;
 	bool key_s;
 	bool key_d;
+
+	bool left_rotate;
+	bool right_rotate;
 }	t_player;
 
 typedef struct s_game
@@ -33,6 +40,8 @@ typedef struct s_game
 	int size_line;
 	int endian;
 	t_player player;
+
+	char **map;
 }	t_game;
 
 int key_press(int key, t_player *player)
@@ -45,6 +54,10 @@ int key_press(int key, t_player *player)
 		player->key_s = true;
 	else if (key == D)
 		player->key_d = true;
+	else if (key == LEFT_ARROW)
+		player->left_rotate = true;
+	else if (key == RIGHT_ARROW)
+		player->right_rotate = true;
 	return (0);
 }
 
@@ -58,6 +71,10 @@ int key_release(int key, t_player *player)
 		player->key_s = false;
 	else if (key == D)
 		player->key_d = false;
+	else if (key == LEFT_ARROW)
+		player->left_rotate = false;
+	else if (key == RIGHT_ARROW)
+		player->right_rotate = false;
 	return (0);
 }
 
@@ -72,6 +89,9 @@ void init_player(t_player *player)
 	player->key_a = false;
 	player->key_s = false;
 	player->key_d = false;
+
+	player->left_rotate = false;
+	player->right_rotate = false;
 }
 
 void put_pixel(int x, int y, int colour, t_game *game)
@@ -104,6 +124,18 @@ void draw_square(int x, int y, int size, int colour, t_game *game)
 		put_pixel(x + i, y + size, colour, game);
 }
 
+char **get_map(void)
+{
+	char **map = malloc(sizeof(char *) * 6);
+	map[0] = "1111111111111111";
+	map[1] = "1000000000000001";
+	map[2] = "1000000000000001";
+	map[3] = "1000000000000001";
+	map[4] = "1111111111111111";
+	map[5] = NULL;
+	return map;
+}
+
 void init_game(t_game *game)
 {
 	init_player(&game->player);
@@ -111,15 +143,25 @@ void init_game(t_game *game)
 	game->win = mlx_new_window(game->mlx, WIDTH, HEIGHT, "cub3d");
 	game->img = mlx_new_image(game->mlx, WIDTH, HEIGHT);
 	game->data = mlx_get_data_addr(game->img, &game->bpp, &game->size_line, &game->endian);
+	game->map = get_map();
 	mlx_put_image_to_window(game->mlx, game->win, game->img, 0, 0);
 }
 
 void move_player(t_player *player)
 {
 	int speed = 3;
-	// float angle_speed = 0.03;
+	float angle_speed = 0.03;
 	float cos_angle = cos(player->angle);
 	float sin_angle = sin(player->angle);
+
+	if (player->left_rotate)
+		player->angle -= angle_speed;
+	if (player->right_rotate)
+		player->angle += angle_speed;
+	if (player->angle > 2 * PI)
+		player->angle = 0;
+	if (player->angle < 0)
+		player->angle = 2 * PI;
 
 	if (player->key_w)
 	{
@@ -161,9 +203,18 @@ void clear_image(t_game *game)
 	}
 }
 
+float distance(float x, float y)
+{
+	return sqrt(x * x + y * y);
+}
+
 float fixed_dist(float x1, float y1, float x2, float y2, t_game *game)
 {
-	float delta
+	float delta_x = x2 - x1;
+	float delta_y = y2 - y1;
+	float angle = atan2(delta_y, delta_x) - game->player.angle;
+	float fix_dist = distance(delta_x, delta_y) * cos(angle);
+	return fix_dist;
 }
 
 bool touch(float px, float py, t_game *game)
@@ -184,18 +235,40 @@ void draw_line(t_player *player, t_game *game, float start_x, int i)
 
 	while (!touch(ray_x, ray_y, game))
 	{
-		put_pixel(ray_x, ray_y, 0x00FF00, game);
+		if (DEBUG)
+			put_pixel(ray_x, ray_y, 0x00FF00, game);
 		ray_x += cos_angle;
 		ray_y += sin_angle;
 	}
-	float dist = fixed_dist(player->x, player->y, ray_x, ray_y, game);
-	float height = (BLOCK / dist) * (WIDTH / 2);
-	int start_y = (HEIGHT - height) / 2;
-	int end = start_y + height;
-	while (start_y < end)
+	if (!DEBUG)
 	{
-		put_pixel(i, start_y, 255, game);
-		start_y++;
+		float dist = fixed_dist(player->x, player->y, ray_x, ray_y, game);
+		float height = (BLOCK / dist) * (WIDTH / 2);
+		int start_y = (HEIGHT - height) / 2;
+		int end = start_y + height;
+		while (start_y < end)
+		{
+			put_pixel(i, start_y, 255, game);
+			start_y++;
+		}
+	}
+}
+
+void draw_map(t_game *game)
+{
+	char **map = game->map;
+	int colour = 0x0000FF;
+	for (int y = 0; map[y]; y++)
+	{
+		for (int x = 0; map[y][x]; x++)
+		{
+			if (map[y][x] == '1')
+				draw_square(x * BLOCK, y * BLOCK, BLOCK, colour, game);
+			// else if (map[y][x] == '0')
+			// 	draw_square(x * BLOCK, y * BLOCK, BLOCK, 0xFFFFFF, game);
+			// else if (map[y][x] == ' ')
+			// 	draw_square(x * BLOCK, y * BLOCK, BLOCK, 0x000000, game);
+		}
 	}
 }
 
@@ -204,8 +277,12 @@ int draw_loop(t_game *game)
 	t_player *player = &game->player;
 	move_player(player);
 	clear_image(game);
-
-	draw_square(player->x, player->y, 10, 0xFF0000, game);
+	
+	if (DEBUG)
+	{
+		draw_square(player->x, player->y, 10, 0xFF0000, game);
+		draw_map(game);
+	}
 
 	float fraction = PI / 3 / WIDTH;
 	float start_x = player->angle - PI / 6;

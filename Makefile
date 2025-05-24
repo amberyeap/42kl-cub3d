@@ -18,7 +18,7 @@ RM = rm -rf
 
 MLX_DIR = minilibx-linux
 MLX_INC = -I$(MLX_DIR)
-MLX_FLAGS = -lXext -lX11 -lm -lz
+MLX_FLAGS = -lXext -lX11 -lm #-lz
 
 INC = -Iinc
 
