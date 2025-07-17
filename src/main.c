@@ -1,299 +1,308 @@
-#include "cub3d.h"
+#include "../inc/cub3d.h"
 
-#define WIDTH 1280
-#define HEIGHT 720
-#define BLOCK 64
-#define DEBUG 1
+# define WIDTH 1280
+# define HEIGHT 720
+// # define BLOCK 64
+// # define DEBUG 1
 
-#define W 119
-#define A 97
-#define S 115
-#define D 100
-#define LEFT_ARROW 65361
-#define RIGHT_ARROW 65363
+# define PI 3.14159265359
 
-#define PI 3.14159
+# define W 119
+# define A 97
+# define S 115
+# define D 100
+# define LEFT 65361
+# define RIGHT 65363
+# define ESC 65307
+
+#define RED 0xC70039
+#define DARK_RED 0x900C3F
+
+typedef struct s_game t_game;
 
 typedef struct s_player
 {
-	float x;
-	float y;
-	float angle;
+	double x;
+	double y;
+	double dir_x;
+	double dir_y;
+	double plane_x;
+	double plane_y;
 
-	bool key_w;
-	bool key_a;
-	bool key_s;
-	bool key_d;
+	// float angle;
 
-	bool left_rotate;
-	bool right_rotate;
+    // bool key_up;
+    // bool key_down;
+    // bool key_left;
+    // bool key_right;
+
+    // bool left_rotate;
+    // bool right_rotate;
+
+	// t_game *game;
 }	t_player;
 
-typedef struct s_game
+typedef struct s_ray
 {
-	void *mlx;
-	void *win;
+	double ray_dir_x;
+	double ray_dir_y;
+	double delta_dist_x;
+	double delta_dist_y;
+	double side_dist_x;
+	double side_dist_y;
+	int map_x;
+	int map_y;
+	int step_x;
+	int step_y;
+	int hit;
+	int side;
+	double perp_wall_dist;
+}	t_ray;
+
+struct s_game
+{
+	void *mlx; // mlx void pointer
+	void *win; // window pointer for mlx
 	void *img;
-
-	char *data;
-	int bpp;
-	int size_line;
+	char *addr;
+	int bpp; // bits per pixel
+	int line_len;
 	int endian;
+
+	int map[WIDTH][HEIGHT];
+
 	t_player player;
+};
 
-	char **map;
-}	t_game;
-
-int key_press(int key, t_player *player)
+void init_player(t_game *game)
 {
-	if (key == W)
-		player->key_w = true;
-	else if (key == A)
-		player->key_a = true;
-	else if (key == S)
-		player->key_s = true;
-	else if (key == D)
-		player->key_d = true;
-	else if (key == LEFT_ARROW)
-		player->left_rotate = true;
-	else if (key == RIGHT_ARROW)
-		player->right_rotate = true;
-	return (0);
-}
+	t_player *player = &game->player;
 
-int key_release(int key, t_player *player)
-{
-	if (key == W)
-		player->key_w = false;
-	else if (key == A)
-		player->key_a = false;
-	else if (key == S)
-		player->key_s = false;
-	else if (key == D)
-		player->key_d = false;
-	else if (key == LEFT_ARROW)
-		player->left_rotate = false;
-	else if (key == RIGHT_ARROW)
-		player->right_rotate = false;
-	return (0);
-}
-
-void init_player(t_player *player)
-{
-	// will vary based on the input map
-	player->x = WIDTH / 2;
-	player->y = HEIGHT / 2;
-	player->angle = PI / 2;
-
-	player->key_w = false;
-	player->key_a = false;
-	player->key_s = false;
-	player->key_d = false;
-
-	player->left_rotate = false;
-	player->right_rotate = false;
-}
-
-void put_pixel(int x, int y, int colour, t_game *game)
-{
-	int index;
-
-	if (x >= WIDTH || x < 0 || y >= HEIGHT || y < 0)
-		return ;
-	index = y * game->size_line + x * game->bpp / 8;
-	game->data[index] = colour & 0xFF;
-	game->data[index + 1] = (colour >> 8) & 0xFF;
-	game->data[index + 2] = (colour >> 16) & 0xFF;
-}
-
-void draw_square(int x, int y, int size, int colour, t_game *game)
-{
-	int i;
-
-	i = 0;
-	while (i++ < size)
-		put_pixel(x + i, y, colour, game);
-	i = 0;
-	while (i++ < size)
-		put_pixel(x, y + i, colour, game);
-	i = 0;
-	while (i++ < size)
-		put_pixel(x + size, y + i, colour, game);
-	i = 0;
-	while (i++ < size)
-		put_pixel(x + i, y + size, colour, game);
-}
-
-char **get_map(void)
-{
-	char **map = malloc(sizeof(char *) * 6);
-	map[0] = "1111111111111111";
-	map[1] = "1000000000000001";
-	map[2] = "1000000000000001";
-	map[3] = "1000000000000001";
-	map[4] = "1111111111111111";
-	map[5] = NULL;
-	return map;
+	player->x = 12.0;
+	player->y = 6.0;
+	player->dir_x = -1.0;
+	player->dir_y = 0.0;
+	player->plane_x = 0.0;
+	player->plane_y = 0.66;
+	// player.game = game;
 }
 
 void init_game(t_game *game)
 {
-	init_player(&game->player);
 	game->mlx = mlx_init();
 	game->win = mlx_new_window(game->mlx, WIDTH, HEIGHT, "cub3d");
 	game->img = mlx_new_image(game->mlx, WIDTH, HEIGHT);
-	game->data = mlx_get_data_addr(game->img, &game->bpp, &game->size_line, &game->endian);
-	game->map = get_map();
-	mlx_put_image_to_window(game->mlx, game->win, game->img, 0, 0);
+	game->addr = mlx_get_data_addr(game->img, &game->bpp, &game->line_len, &game->endian);
+	int temp_map[WIDTH][HEIGHT] = {
+		{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,0,0,0,0,0,1,1,1,1,1,0,0,0,0,1,0,1,0,1,0,0,0,1},
+		{1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1,0,0,0,1,0,0,0,1},
+		{1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,0,0,0,0,0,1,1,0,1,1,0,0,0,0,1,0,1,0,1,0,0,0,1},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+		{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
+	};
+
+	memcpy(game->map, temp_map, sizeof(temp_map));
+
+	init_player(game);
 }
 
-void move_player(t_player *player)
+void my_pixel_put(t_game *game, int x, int y, int colour)
 {
-	int speed = 3;
-	float angle_speed = 0.03;
-	float cos_angle = cos(player->angle);
-	float sin_angle = sin(player->angle);
+	// need to add edge case checks?
 
-	if (player->left_rotate)
-		player->angle -= angle_speed;
-	if (player->right_rotate)
-		player->angle += angle_speed;
-	if (player->angle > 2 * PI)
-		player->angle = 0;
-	if (player->angle < 0)
-		player->angle = 2 * PI;
+	char *dest;
 
-	if (player->key_w)
+	dest = game->addr + (y * game->line_len + x * (game->bpp / 8));
+	*(unsigned int *)dest = colour;
+}
+
+void init_ray(t_ray *ray, int x, t_game *game)
+{
+	double camera_x = 2 * x / (double)WIDTH - 1;
+	ray->ray_dir_x = game->player.dir_x + game->player.plane_x * camera_x;
+	ray->ray_dir_y = game->player.dir_y + game->player.plane_y * camera_x;
+	ray->delta_dist_x = (ray->ray_dir_x == 0) ? 1e30 : fabs(1 / ray->ray_dir_x);
+	ray->delta_dist_y = (ray->ray_dir_y == 0) ? 1e30 : fabs(1 / ray->ray_dir_y);
+	ray->map_x = (int)game->player.x;
+	ray->map_y = (int)game->player.y;
+	ray->hit = 0;
+}
+
+void count_step(t_ray *ray, t_game *game)
+{
+	if (ray->ray_dir_x < 0)
 	{
-		player->x += cos_angle * speed;
-		player->y += sin_angle * speed;
+		ray->step_x = -1;
+		ray->side_dist_x = (game->player.x - ray->map_x) * ray->delta_dist_x;
 	}
-	if (player->key_s)
+	else
 	{
-		player->x -= cos_angle * speed;
-		player->y -= sin_angle * speed;
+		ray->step_x = 1;
+		ray->side_dist_x = (ray->map_x + 1.0 - game->player.x) * ray->delta_dist_x;
 	}
-	if (player->key_a)
+	if (ray->ray_dir_y < 0)
 	{
-		player->x += cos_angle * speed;
-		player->y -= sin_angle * speed;
+		ray->step_y = -1;
+		ray->side_dist_y = (game->player.y - ray->map_y) * ray->delta_dist_y;
 	}
-	if (player->key_d)
+	else
 	{
-		player->x -= cos_angle * speed;
-		player->y += sin_angle * speed;
+		ray->step_y = 1;
+		ray->side_dist_y = (ray->map_y + 1.0 - game->player.y) * ray->delta_dist_y;
 	}
+}
+
+void perform_dda(t_ray *ray, t_game *game)
+{
+	while (ray->hit == 0)
+	{
+		if (ray->side_dist_x < ray->side_dist_y)
+		{
+			ray->side_dist_x += ray->delta_dist_x;
+			ray->map_x += ray->step_x;
+			ray->side = 0;
+		}
+		else
+		{
+			ray->side_dist_y += ray->delta_dist_y;
+			ray->map_y += ray->step_y;
+			ray->side = 1;
+		}
+		if (game->map[ray->map_x][ray->map_y] > 0)
+			ray->hit = 1;
+	}
+}
+
+void count_perp_distance(t_ray *ray)
+{
+	if (ray->side == 0)
+		ray->perp_wall_dist = (ray->side_dist_x - ray->delta_dist_x);
+	else
+		ray->perp_wall_dist = (ray->side_dist_y - ray->delta_dist_y);
+}
+
+void draw_walls(t_ray *ray, int x, t_game *game)
+{
+	int line_height = (int)(HEIGHT / ray->perp_wall_dist);
+	int start = -line_height / 2 + HEIGHT / 2;
+	if (start < 0)
+		start = 0;
+	int end = line_height / 2 + HEIGHT / 2;
+	if (end >= HEIGHT)
+		end = HEIGHT - 1;
+
+	int colour;
+	if (ray->side == 1)
+		colour = RED;
+	else
+		colour = DARK_RED;
+
+	int y = start;
+	while (y++ < end)
+		my_pixel_put(game, x, y, colour);
+}
+
+void raycast(t_game *game)
+{
+	t_ray ray;
+	int x = 0;
+
+	while (x < WIDTH)
+	{
+		init_ray(&ray, x, game);
+		count_step(&ray, game);
+		perform_dda(&ray, game);
+		count_perp_distance(&ray);
+		draw_walls(&ray, x, game);
+		x++;
+	}
+	
 }
 
 void clear_image(t_game *game)
 {
+	int x = 0;
 	int y;
-	int x;
-
-	y = 0;
-	while (y < HEIGHT)
+	while (x < WIDTH)
 	{
-		x = 0;
-		while (x < WIDTH)
+		y = 0;
+		while (y < HEIGHT)
 		{
-			put_pixel(x, y, 0, game);
-			x++;
+			my_pixel_put(game, x, y, 0);
+			y++;
 		}
-		y++;
+		x++;
 	}
 }
 
-float distance(float x, float y)
+int render(t_game *game)
 {
-	return sqrt(x * x + y * y);
-}
-
-float fixed_dist(float x1, float y1, float x2, float y2, t_game *game)
-{
-	float delta_x = x2 - x1;
-	float delta_y = y2 - y1;
-	float angle = atan2(delta_y, delta_x) - game->player.angle;
-	float fix_dist = distance(delta_x, delta_y) * cos(angle);
-	return fix_dist;
-}
-
-bool touch(float px, float py, t_game *game)
-{
-	int x = px / BLOCK;
-	int y = py / BLOCK;
-	if (game->map[y][x] == '1')
-		return true;
-	return false;
-}
-
-void draw_line(t_player *player, t_game *game, float start_x, int i)
-{
-	float cos_angle = cos(start_x);
-	float sin_angle = sin(start_x);
-	float ray_x = player->x;
-	float ray_y = player->y;
-
-	while (!touch(ray_x, ray_y, game))
-	{
-		if (DEBUG)
-			put_pixel(ray_x, ray_y, 0x00FF00, game);
-		ray_x += cos_angle;
-		ray_y += sin_angle;
-	}
-	if (!DEBUG)
-	{
-		float dist = fixed_dist(player->x, player->y, ray_x, ray_y, game);
-		float height = (BLOCK / dist) * (WIDTH / 2);
-		int start_y = (HEIGHT - height) / 2;
-		int end = start_y + height;
-		while (start_y < end)
-		{
-			put_pixel(i, start_y, 255, game);
-			start_y++;
-		}
-	}
-}
-
-void draw_map(t_game *game)
-{
-	char **map = game->map;
-	int colour = 0x0000FF;
-	for (int y = 0; map[y]; y++)
-	{
-		for (int x = 0; map[y][x]; x++)
-		{
-			if (map[y][x] == '1')
-				draw_square(x * BLOCK, y * BLOCK, BLOCK, colour, game);
-			// else if (map[y][x] == '0')
-			// 	draw_square(x * BLOCK, y * BLOCK, BLOCK, 0xFFFFFF, game);
-			// else if (map[y][x] == ' ')
-			// 	draw_square(x * BLOCK, y * BLOCK, BLOCK, 0x000000, game);
-		}
-	}
-}
-
-int draw_loop(t_game *game)
-{
-	t_player *player = &game->player;
-	move_player(player);
+	//clear image 
 	clear_image(game);
-	
-	if (DEBUG)
+
+	raycast(game);
+	mlx_put_image_to_window(game->mlx, game->win, game->img, 0, 0);
+
+	return (0);
+}
+
+int key_hook(int keycode, t_game *game)
+{
+	double move_speed = 0.1;
+	double rot_speed = 0.05;
+
+	if (keycode == ESC)
+		exit(0);
+
+	// move forward
+	if (keycode == W)
 	{
-		draw_square(player->x, player->y, 10, 0xFF0000, game);
-		draw_map(game);
+		if (game->map[(int)(game->player.x + game->player.dir_x * move_speed)][(int)(game->player.y)] == 0)
+			game->player.x += game->player.dir_x * move_speed;
+		if (game->map[(int)(game->player.x)][(int)(game->player.y + game->player.dir_y * move_speed)] == 0)
+			game->player.y += game->player.dir_y * move_speed;
 	}
 
-	float fraction = PI / 3 / WIDTH;
-	float start_x = player->angle - PI / 6;
-	int i = 0;
-	while (i < WIDTH)
+	// move backward
+	if (keycode == S)
 	{
-		draw_line(player, game, start_x, i);
-		start_x += fraction;
-		i++;
+		if (game->map[(int)(game->player.x - game->player.dir_x * move_speed)][(int)(game->player.y)] == 0)
+			game->player.x -= game->player.dir_x * move_speed;
+		if (game->map[(int)(game->player.x)][(int)(game->player.y - game->player.dir_y * move_speed)] == 0)
+			game->player.y -= game->player.dir_y * move_speed;
 	}
-	mlx_put_image_to_window(game->mlx, game->win, game->img, 0, 0);
+
+	// rotate to right
+	if (keycode == D)
+	{
+		double old_dir_x = game->player.dir_x;
+		double old_plane_x = game->player.plane_x;
+
+		game->player.dir_x = game->player.dir_x * cos(-rot_speed) - game->player.dir_y * sin(-rot_speed);
+		game->player.dir_y = old_dir_x * sin(-rot_speed) + game->player.dir_y * cos(-rot_speed);
+		game->player.plane_x = game->player.plane_x * cos(-rot_speed) - game->player.plane_y * sin(-rot_speed);
+		game->player.plane_y = old_plane_x * sin(-rot_speed) + game->player.plane_y * cos(-rot_speed);
+	}
+
+	// rotate to left
+	if (keycode == A)
+	{
+		double old_dir_x = game->player.dir_x;
+		double old_plane_x = game->player.plane_x;
+
+		game->player.dir_x = game->player.dir_x * cos(rot_speed) - game->player.dir_y * sin(rot_speed);
+		game->player.dir_y = old_dir_x * sin(rot_speed) + game->player.dir_y * cos(rot_speed);
+		game->player.plane_x = game->player.plane_x * cos(rot_speed) - game->player.plane_y * sin(rot_speed);
+		game->player.plane_y = old_plane_x * sin(rot_speed) + game->player.plane_y * cos(rot_speed);
+	}
 	return (0);
 }
 
@@ -302,55 +311,322 @@ int main(void)
 	t_game game;
 
 	init_game(&game);
-	draw_square(WIDTH / 2, HEIGHT / 2, 10, 0xFF0000, &game);
-	mlx_hook(game.win, 2, 1L<<0, key_press, &game.player);
-	mlx_hook(game.win, 3, 1L<<1, key_release, &game.player);
-	mlx_loop_hook(game.mlx, draw_loop, &game);
+	mlx_hook(game.win, 2, 1L<<0, key_hook, &game);
+	// mlx_hook(game.win, 2, 1L<<0, key_press, &game);
+	// mlx_hook(game.win, 3, 1L<<1, key_release, &game);
+	mlx_loop_hook(game.mlx, render, &game);
 	mlx_loop(game.mlx);
+
 	return (0);
 }
 
-// typedef struct	s_data {
-// 	void	*img;
-// 	char	*addr;
-// 	int		bits_per_pixel;
-// 	int		line_length;
-// 	int		endian;
-// }				t_data;
-
-// void	my_mlx_pixel_put(t_data *data, int x, int y, int color)
-// {
-//     char	*dst;
-
-//     dst = data->addr + (y * data->line_length + x * (data->bits_per_pixel / 8));
-//     *(unsigned int*)dst = color;
+// char **get_map(void)
+// {	
+//     char **map;
+//     const char *template[] = {
+//         "1111111111111",
+//         "1000000001001",
+//         "1110000000001",
+//         "1000000001001",
+//         "10000000010N1",
+//         "1111111111111"
+//     };
+    
+//     map = malloc(sizeof(char *) * 7);
+//     if (!map)
+//         return NULL;
+        
+//     for (int i = 0; i < 6; i++) {
+//         map[i] = strdup(template[i]);
+//         if (!map[i]) {
+//             // Cleanup already allocated rows
+//             while (--i >= 0)
+//                 free(map[i]);
+//             free(map);
+//             return NULL;
+//         }
+//     }
+//     map[6] = NULL;
+//     return map;
 // }
 
-// int	main(void)
+// int is_player(char c)
 // {
-// 	void	*mlx;
-// 	void	*mlx_win;
-// 	t_data	img;
-// 	int x, y;
+// 	if (c == 'N' || c == 'S' || c == 'E' || c == 'W')
+// 		return 1;
+// 	return 0;
+// }
 
-// 	mlx = mlx_init();
-// 	mlx_win = mlx_new_window(mlx, 1920, 1080, "Hello world!");
-// 	img.img = mlx_new_image(mlx, 1920, 1080);
-// 	img.addr = mlx_get_data_addr(img.img, &img.bits_per_pixel, &img.line_length,
-// 								&img.endian);
-//    // Draw a 10x10 red square
-//     y = 5;
-//     while (y < 15)
+// void print_values(t_game *g)
+// {
+// 	printf("%f\n", g->player->pos_x);
+// 	printf("%f\n", g->player->pos_y);
+// }
+
+// void init_player(t_game *game)
+// {
+// 	game->player = malloc(sizeof(t_player));
+// 	int y = 0;
+// 	int x;
+// 	while (game->map[y])
+// 	{
+// 		x = 0;
+// 		while (game->map[y][x])
+// 		{
+// 			if (is_player(game->map[y][x]))
+// 			{
+// 				game->player->pos_x = x;
+// 				game->player->pos_y = y;
+// 				break;
+// 			}
+// 			x++;
+// 		}
+// 		y++;
+// 	}
+// 	print_values(game);
+// 	game->player->dir_x = 0.0;
+// 	game->player->dir_y = -1.0;
+// 	game->player->plane_x = 0.66;
+// 	game->player->plane_y = 0.0;
+
+// 	game->player->angle = PI / 2;
+
+//     game->player->key_up = false;
+//     game->player->key_down = false;
+//     game->player->key_right = false;
+//     game->player->key_left = false;
+
+//     game->player->left_rotate = false;
+//     game->player->right_rotate = false;
+
+// 	game->player->game = game;
+// }
+
+// void init_game(t_game *game)
+// {
+// 	// game = malloc(sizeof(t_game));
+// 	game->mlx = mlx_init();
+// 	game->win = mlx_new_window(game->mlx, WIDTH, HEIGHT, "cub3d");
+// 	game->img = mlx_new_image(game->mlx, WIDTH, HEIGHT);
+// 	game->addr = mlx_get_data_addr(game->img, &game->bpp, &game->line_len, &game->endian);
+
+// 	game->map = get_map();
+// 	init_player(game);
+// }
+
+// void my_pixel_put(t_game *game, int x, int y, int colour)
+// {
+//     if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT)
+//         return;
+        
+//     char *dest = game->addr + (y * game->line_len + x * (game->bpp / 8));
+//     *(unsigned int *)dest = colour;
+// }
+
+// void draw_column(t_game *game, int x, int start, int end, int colour)
+// {
+// 	for (int y = start; y <= end; y++)
+// 		my_pixel_put(game, x, y, colour);
+// }
+
+// void start_game(t_game *game)
+// {
+// 	t_player *player = game->player;
+// 	for (int x = 0; x < WIDTH; x++)
+// 	{
+// 		double cameraX = 2 * x / (double)WIDTH - 1;
+// 		double raydirX = player->dir_x + player->plane_x * cameraX;
+// 		double raydirY = player->dir_y + player->plane_y * cameraX;
+
+// 		int mapX = (int)player->pos_x;
+// 		int mapY = (int)player->pos_y;
+
+// 		double deltaX = fabs(1 / raydirX);
+// 		double deltaY = fabs(1 / raydirY);
+
+// 		// calculates the ray direction
+// 		double sideX, sideY;
+// 		int stepX, stepY;
+
+// 		if (raydirX < 0)
+// 		{
+// 			stepX = -1;
+// 			sideX = (player->pos_x - mapX) * deltaX;
+// 		}
+// 		else
+// 		{
+// 			stepX = 1;
+// 			sideX = (mapX + 1.0 - player->pos_x) * deltaX;
+// 		}
+// 		if (raydirY < 0)
+// 		{
+// 			stepY = -1;
+// 			sideY = (player->pos_y - mapY) * deltaY;
+// 		}
+// 		else
+// 		{
+// 			stepY = 1;
+// 			sideY = (mapY + 1.0 - player->pos_y) * deltaY;
+// 		}
+
+// 		int hit = 0, side;
+// 		while (!hit)
+// 		{
+// 			if (sideX < sideY)
+// 			{
+// 				sideX += deltaX;
+// 				mapX += stepX;
+// 				side = 0;
+// 			}
+// 			else
+// 			{
+// 				sideY += deltaY;
+// 				mapY += stepY;
+// 				side = 1;
+// 			}
+// 			if (game->map[mapY][mapX] == '1')
+// 				hit = 1;
+// 		}
+		
+// 		// fixes the "fisheye" effect 
+// 		double perpWall;
+// 		if (side == 0)
+// 			perpWall = (mapX - player->pos_x + (1 - stepX) / 2) / raydirX;
+// 		else
+// 			perpWall = (mapY - player->pos_y + (1 - stepY) / 2) / raydirY;
+
+// 		int line_h = (int)(HEIGHT / perpWall);
+// 		int drawStart = -line_h / 2 + HEIGHT / 2;
+// 		if (drawStart < 0)
+// 			drawStart = 0;
+// 		int drawEnd = line_h / 2 + HEIGHT / 2;
+// 		if (drawEnd >= HEIGHT)
+// 			drawEnd = HEIGHT - 1;
+
+// 		int colour;
+// 		if (side == 0)
+// 			colour = 0x00FF0000;
+// 		else
+// 			colour = 0x00880000;
+		
+// 		draw_column(game, x, drawStart, drawEnd, colour);
+// 	}
+// 	mlx_put_image_to_window(game->mlx, game->win, game->img, 0, 0);
+// 	// mlx_destroy_image(game->mlx, game->img);
+// }
+
+// int key_press(int keycode, t_player *player)
+// {
+//     if(keycode == W)
+//         player->key_up = true;
+//     if(keycode == S)
+//         player->key_down = true;
+//     if(keycode == A)
+//         player->key_left = true;
+//     if(keycode == D)
+//         player->key_right = true;
+//     if(keycode == LEFT)
+//         player->left_rotate = true;
+//     if(keycode == RIGHT)
+//         player->right_rotate = true;
+//     return 0;
+// }
+
+// int key_release(int keycode, t_player *player)
+// {
+//     if(keycode == W)
+//         player->key_up = false;
+//     if(keycode == S)
+//         player->key_down = false;
+//     if(keycode == A)
+//         player->key_left = false;
+//     if(keycode == D)
+//         player->key_right = false;
+//     if(keycode == LEFT)
+//         player->left_rotate = false;
+//     if(keycode == RIGHT)
+//         player->right_rotate = false;
+//     return 0;
+// }
+
+// void move_player(t_player *player)
+// {
+//     int speed = 3;
+//     float angle_speed = 0.03;
+//     float cos_angle = cos(player->angle);
+//     float sin_angle = sin(player->angle);
+
+//     if (player->left_rotate)
+//         player->angle -= angle_speed;
+//     if (player->right_rotate)
+//         player->angle += angle_speed;
+//     if (player->angle > 2 * PI)
+//         player->angle = 0;
+//     if (player->angle < 0)
+//         player->angle = 2 * PI;
+
+//     if (player->key_up)
 //     {
-//         x = 5;
-//         while (x < 15)
-//         {
-//             my_mlx_pixel_put(&img, x, y, 0xFF0000);
-//             x++;
-//         }
-//         y++;
+//         player->pos_x += cos_angle * speed;
+//         player->pos_y += sin_angle * speed;
 //     }
-    
-// 	mlx_put_image_to_window(mlx, mlx_win, img.img, 0, 0);
-// 	mlx_loop(mlx);
+//     if (player->key_down)
+//     {
+//         player->pos_x -= cos_angle * speed;
+//         player->pos_y -= sin_angle * speed;
+//     }
+//     if (player->key_left)
+//     {
+//         player->pos_x += sin_angle * speed;
+//         player->pos_y -= cos_angle * speed;
+//     }
+//     if (player->key_right)
+//     {
+//         player->pos_x -= sin_angle * speed;
+//         player->pos_y += cos_angle * speed;
+//     }
+// }
+
+// // void print_values(t_game *game)
+// // {
+// // 	printf("x: %d\ny: %d\n", game->player->x, game->player->y);
+// // 	printf("player->game: %p\n", game);
+// // 	printf("player->game: %p\n", game->player->game);
+	
+// // 	int i = 0;
+// // 	while (game->map[i])
+// // 	{
+// // 		printf("%s\n", game->map[i]);
+// // 		i++;
+// // 	}
+// // }
+
+// void clear_image(t_game *game)
+// {
+//     for(int y = 0; y < HEIGHT; y++)
+//         for(int x = 0; x < WIDTH; x++)
+//             my_pixel_put(game, x, y, 0);
+// }
+
+// int draw_loop(t_game *game)
+// {
+// 	move_player(game->player);
+// 	clear_image(game);
+// 	start_game(game);
+// 	return 0;
+// }
+
+// int main(void)
+// {
+// 	t_game game;
+
+// 	init_game(&game);
+// 	start_game(&game);
+// 	move_player(game.player);
+//     mlx_hook(game.win, 2, 1L<<0, key_press, &game.player);
+//     mlx_hook(game.win, 3, 1L<<1, key_release, &game.player);
+// 	// mlx_loop_hook(game.mlx, draw_loop, &game);
+// 	// mlx_loop_hook(game.mlx, &start_game, &game);
+// 	// print_values(&game);
+// 	mlx_loop(game.mlx);
 // }
