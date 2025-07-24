@@ -24,6 +24,7 @@ typedef struct s_player
 {
 	double x;
 	double y;
+	double angle;
 	double dir_x;
 	double dir_y;
 	double plane_x;
@@ -59,6 +60,17 @@ typedef struct s_ray
 	double perp_wall_dist;
 }	t_ray;
 
+typedef struct s_key
+{
+    bool w;
+    bool s;
+    bool a;
+    bool d;
+
+    bool left;
+    bool right;
+}	t_key;
+
 struct s_game
 {
 	void *mlx; // mlx void pointer
@@ -71,6 +83,7 @@ struct s_game
 
 	int map[WIDTH][HEIGHT];
 
+	t_key keys;
 	t_player player;
 };
 
@@ -80,10 +93,11 @@ void init_player(t_game *game)
 
 	player->x = 12.0;
 	player->y = 6.0;
-	player->dir_x = -1.0;
-	player->dir_y = 0.0;
-	player->plane_x = 0.0;
-	player->plane_y = 0.66;
+	player->angle = M_PI;
+	player->dir_x = cos(player->angle);
+	player->dir_y = sin(player->angle);
+	player->plane_x = cos(player->angle + M_PI_2) * 0.66;
+	player->plane_y = sin(player->angle + M_PI_2) * 0.66;
 	// player.game = game;
 }
 
@@ -243,66 +257,153 @@ void clear_image(t_game *game)
 	}
 }
 
+void update_direction(t_player *player)
+{
+	player->dir_x = cos(player->angle);
+	player->dir_y = sin(player->angle);
+	player->plane_x = cos(player->angle + M_PI_2) * 0.66;
+	player->plane_y = sin(player->angle + M_PI_2) * 0.66;
+}
+
+// int key_hook(int keycode, t_game *game)
+// {
+// 	double move_speed = 0.1;
+// 	double rot_speed = 0.05;
+
+// 	if (keycode == ESC)
+// 		exit(0);
+
+// 	// move forward
+// 	if (keycode == W)
+// 	{
+// 		double new_x = game->player.x + cos(game->player.angle) * move_speed;
+// 		double new_y = game->player.y + sin(game->player.angle) * move_speed;
+
+// 		if (game->map[(int)new_x][(int)(game->player.y)] == 0)
+// 			game->player.x = new_x;
+// 		if (game->map[(int)(game->player.x)][(int)new_y] == 0)
+// 			game->player.y = new_y;
+// 	}
+
+// 	// move backward
+// 	if (keycode == S)
+// 	{
+// 		double new_x = game->player.x - cos(game->player.angle) * move_speed;
+// 		double new_y = game->player.y - sin(game->player.angle) * move_speed;
+
+// 		if (game->map[(int)new_x][(int)(game->player.y)] == 0)
+// 			game->player.x = new_x;
+// 		if (game->map[(int)(game->player.x)][(int)new_y] == 0)
+// 			game->player.y = new_y;
+// 	}
+
+// 	// rotate to right
+// 	if (keycode == D)
+// 	{
+// 		game->player.angle += rot_speed;
+// 		update_direction(&game->player);
+// 	}
+
+// 	// rotate to left
+// 	if (keycode == A)
+// 	{
+// 		game->player.angle -= rot_speed;
+// 		update_direction(&game->player);
+// 	}
+// 	return (0);
+// }
+
+int key_press(int keycode, t_game *game)
+{
+	if (keycode == ESC)
+		exit(0);
+	if (keycode == W)
+		game->keys.w = true;
+	if (keycode == S)
+		game->keys.s = true;
+	if (keycode == A)
+		game->keys.a = true;
+	if (keycode == D)
+		game->keys.d = true;
+	if (keycode == LEFT)
+		game->keys.left = true;
+	if (keycode == RIGHT)
+		game->keys.right = true;
+
+	return (0);
+}
+
+int key_release(int keycode, t_game *game)
+{
+	if (keycode == W)
+		game->keys.w = false;
+	if (keycode == S)
+		game->keys.s = false;
+	if (keycode == A)
+		game->keys.a = false;
+	if (keycode == D)
+		game->keys.d = false;
+	if (keycode == LEFT)
+		game->keys.left = false;
+	if (keycode == RIGHT)
+		game->keys.right = false;
+
+	return (0);
+}
+
+void move_player(t_game *game)
+{
+	double move_speed = 0.03;
+	double rot_speed = 0.02;
+
+	// move forward
+	if (game->keys.w == true)
+	{
+		double new_x = game->player.x + cos(game->player.angle) * move_speed;
+		double new_y = game->player.y + sin(game->player.angle) * move_speed;
+
+		if (game->map[(int)new_x][(int)(game->player.y)] == 0)
+			game->player.x = new_x;
+		if (game->map[(int)(game->player.x)][(int)new_y] == 0)
+			game->player.y = new_y;
+	}
+
+	// move backward
+	if (game->keys.s == true)
+	{
+		double new_x = game->player.x - cos(game->player.angle) * move_speed;
+		double new_y = game->player.y - sin(game->player.angle) * move_speed;
+
+		if (game->map[(int)new_x][(int)(game->player.y)] == 0)
+			game->player.x = new_x;
+		if (game->map[(int)(game->player.x)][(int)new_y] == 0)
+			game->player.y = new_y;
+	}
+
+	// rotate to right
+	if (game->keys.right == true)
+	{
+		game->player.angle += rot_speed;
+		update_direction(&game->player);
+	}
+
+	// rotate to left
+	if (game->keys.left == true)
+	{
+		game->player.angle -= rot_speed;
+		update_direction(&game->player);
+	}
+}
+
 int render(t_game *game)
 {
 	//clear image 
 	clear_image(game);
 
 	raycast(game);
+	move_player(game);
 	mlx_put_image_to_window(game->mlx, game->win, game->img, 0, 0);
 
-	return (0);
-}
-
-int key_hook(int keycode, t_game *game)
-{
-	double move_speed = 0.1;
-	double rot_speed = 0.05;
-
-	if (keycode == ESC)
-		exit(0);
-
-	// move forward
-	if (keycode == W)
-	{
-		if (game->map[(int)(game->player.x + game->player.dir_x * move_speed)][(int)(game->player.y)] == 0)
-			game->player.x += game->player.dir_x * move_speed;
-		if (game->map[(int)(game->player.x)][(int)(game->player.y + game->player.dir_y * move_speed)] == 0)
-			game->player.y += game->player.dir_y * move_speed;
-	}
-
-	// move backward
-	if (keycode == S)
-	{
-		if (game->map[(int)(game->player.x - game->player.dir_x * move_speed)][(int)(game->player.y)] == 0)
-			game->player.x -= game->player.dir_x * move_speed;
-		if (game->map[(int)(game->player.x)][(int)(game->player.y - game->player.dir_y * move_speed)] == 0)
-			game->player.y -= game->player.dir_y * move_speed;
-	}
-
-	// rotate to right
-	if (keycode == D)
-	{
-		double old_dir_x = game->player.dir_x;
-		double old_plane_x = game->player.plane_x;
-
-		game->player.dir_x = game->player.dir_x * cos(-rot_speed) - game->player.dir_y * sin(-rot_speed);
-		game->player.dir_y = old_dir_x * sin(-rot_speed) + game->player.dir_y * cos(-rot_speed);
-		game->player.plane_x = game->player.plane_x * cos(-rot_speed) - game->player.plane_y * sin(-rot_speed);
-		game->player.plane_y = old_plane_x * sin(-rot_speed) + game->player.plane_y * cos(-rot_speed);
-	}
-
-	// rotate to left
-	if (keycode == A)
-	{
-		double old_dir_x = game->player.dir_x;
-		double old_plane_x = game->player.plane_x;
-
-		game->player.dir_x = game->player.dir_x * cos(rot_speed) - game->player.dir_y * sin(rot_speed);
-		game->player.dir_y = old_dir_x * sin(rot_speed) + game->player.dir_y * cos(rot_speed);
-		game->player.plane_x = game->player.plane_x * cos(rot_speed) - game->player.plane_y * sin(rot_speed);
-		game->player.plane_y = old_plane_x * sin(rot_speed) + game->player.plane_y * cos(rot_speed);
-	}
 	return (0);
 }
 
@@ -311,9 +412,9 @@ int main(void)
 	t_game game;
 
 	init_game(&game);
-	mlx_hook(game.win, 2, 1L<<0, key_hook, &game);
-	// mlx_hook(game.win, 2, 1L<<0, key_press, &game);
-	// mlx_hook(game.win, 3, 1L<<1, key_release, &game);
+	// mlx_hook(game.win, 2, 1L<<0, key_hook, &game);
+	mlx_hook(game.win, 2, 1L<<0, key_press, &game);
+	mlx_hook(game.win, 3, 1L<<1, key_release, &game);
 	mlx_loop_hook(game.mlx, render, &game);
 	mlx_loop(game.mlx);
 
