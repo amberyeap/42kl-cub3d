@@ -101,6 +101,16 @@ void init_player(t_game *game)
 	// player.game = game;
 }
 
+void init_keys(t_key *keys)
+{
+	keys->w = false;
+	keys->a = false;
+	keys->s = false;
+	keys->d = false;
+	keys->left = false;
+	keys->right = false;
+}
+
 void init_game(t_game *game)
 {
 	game->mlx = mlx_init();
@@ -125,6 +135,7 @@ void init_game(t_game *game)
 
 	memcpy(game->map, temp_map, sizeof(temp_map));
 
+	init_keys(&game->keys);
 	init_player(game);
 }
 
@@ -380,6 +391,37 @@ void move_player(t_game *game)
 			game->player.y = new_y;
 	}
 
+	// strafe right (D)
+	if (game->keys.a == true)
+	{
+		double strafe_x = sin(game->player.angle);
+		double strafe_y = -cos(game->player.angle);
+
+		double new_x = game->player.x + strafe_x * move_speed;
+		double new_y = game->player.y + strafe_y * move_speed;
+
+		if (game->map[(int)new_x][(int)(game->player.y)] == 0)
+			game->player.x = new_x;
+		if (game->map[(int)(game->player.x)][(int)new_y] == 0)
+			game->player.y = new_y;
+	}
+
+	// strafe left (A)
+	if (game->keys.d == true)
+	{
+		double strafe_x = -sin(game->player.angle);
+		double strafe_y = cos(game->player.angle);
+
+		double new_x = game->player.x + strafe_x * move_speed;
+		double new_y = game->player.y + strafe_y * move_speed;
+
+		if (game->map[(int)new_x][(int)(game->player.y)] == 0)
+			game->player.x = new_x;
+		if (game->map[(int)(game->player.x)][(int)new_y] == 0)
+			game->player.y = new_y;
+	}
+
+
 	// rotate to right
 	if (game->keys.right == true)
 	{
@@ -407,14 +449,29 @@ int render(t_game *game)
 	return (0);
 }
 
+int exit_game(t_game *game)
+{
+	(void)game;
+	// add cleanup functions
+	exit(0);
+}
+
+// 2 KeyPress Event; 1L<<0 KeyPress Mask
+// 3 KeyRelease Event; 1L<<1 KeyRelease Mask
 int main(void)
 {
 	t_game game;
 
 	init_game(&game);
+
+	// for player movement
 	// mlx_hook(game.win, 2, 1L<<0, key_hook, &game);
 	mlx_hook(game.win, 2, 1L<<0, key_press, &game);
 	mlx_hook(game.win, 3, 1L<<1, key_release, &game);
+
+	// for the red 'x' button on the window
+	mlx_hook(game.win, 17, 0, exit_game, &game);
+
 	mlx_loop_hook(game.mlx, render, &game);
 	mlx_loop(game.mlx);
 
