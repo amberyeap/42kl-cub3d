@@ -22,6 +22,7 @@
 // additional functions
 int		ft_strisnum(const char *str);
 char	*ft_strncpy(char *dst, const char *src, size_t size);
+int		ft_isspace(int c);
 
 // ft_printf
 int		ft_fprintf(int fd, const char *format, ...);
