@@ -32,6 +32,8 @@
 
 #define RED 0xC70039
 #define DARK_RED 0x900C3F
+// #define SKY_BLUE 0x87CEEB
+// #define GREEN 0x228B22
 
 typedef struct s_map
 {
@@ -87,7 +89,7 @@ typedef struct s_key
     bool right;
 }	t_key;
 
-typedef struct s_tex
+typedef struct s_img
 {
 	void *img;
 	char *addr;
@@ -96,23 +98,24 @@ typedef struct s_tex
 	int endian;
 	int width;
 	int height;
-}	t_tex;
+}	t_img;
 
 typedef struct s_data
 {
 	void *mlx; // mlx void pointer
 	void *win; // window pointer for mlx
-	void *img;
-	char *addr;
-	int bpp; // bits per pixel
-	int line_len;
-	int endian;
+	// void *img;
+	// char *addr;
+	// int bpp; // bits per pixel
+	// int line_len;
+	// int endian;
 
 	int maps[WIDTH][HEIGHT];
 
 	// t_tex textures;
 	t_map map_info;
-	t_tex textures[4];
+	t_img frame;
+	t_img textures[4];
 	t_key keys;
 	t_player player;
 }	t_data;
@@ -172,12 +175,20 @@ void init_textures(t_data *data)
 	}
 }
 
+void init_frame(t_data *data)
+{
+	data->frame.img = mlx_new_image(data->mlx, WIDTH, HEIGHT);
+	data->frame.addr = mlx_get_data_addr(data->frame.img, &data->frame.bpp, &data->frame.line_len, &data->frame.endian);
+	data->frame.width = WIDTH;
+	data->frame.height = HEIGHT;
+}
+
 void init_game(t_data *data)
 {
 	data->mlx = mlx_init();
 	data->win = mlx_new_window(data->mlx, WIDTH, HEIGHT, "cub3d");
-	data->img = mlx_new_image(data->mlx, WIDTH, HEIGHT); // to load in the textures instead
-	data->addr = mlx_get_data_addr(data->img, &data->bpp, &data->line_len, &data->endian);
+	// data->img = mlx_new_image(data->mlx, WIDTH, HEIGHT);
+	// data->addr = mlx_get_data_addr(data->img, &data->bpp, &data->line_len, &data->endian);
 	int temp_map[WIDTH][HEIGHT] = {
 		{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
 		{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
@@ -196,18 +207,31 @@ void init_game(t_data *data)
 
 	ft_memcpy(data->maps, temp_map, sizeof(temp_map));
 
+	init_frame(data);
 	init_textures(data);
 	init_keys(&data->keys);
 	init_player(data);
 }
 
-void my_pixel_put(t_data *data, int x, int y, int colour)
+// void my_pixel_put(t_data *data, int x, int y, int colour)
+// {
+// 	// need to add edge case checks?
+
+// 	char *dest;
+
+// 	dest = data->addr + (y * data->line_len + x * (data->bpp / 8));
+// 	*(unsigned int *)dest = colour;
+// }
+
+int get_pixel(t_img *tex, int x, int y)
 {
-	// need to add edge case checks?
+	char *dest = tex->addr + (y * tex->line_len + x * (tex->bpp / 8));
+	return *(unsigned int *)dest;
+}
 
-	char *dest;
-
-	dest = data->addr + (y * data->line_len + x * (data->bpp / 8));
+void put_pixel(t_img *img, int x, int y, int colour)
+{
+	char *dest = img->addr + (y * img->line_len + x * (img->bpp / 8));
 	*(unsigned int *)dest = colour;
 }
 
@@ -286,15 +310,92 @@ void draw_walls(t_ray *ray, int x, t_data *data)
 	if (end >= HEIGHT)
 		end = HEIGHT - 1;
 
-	int colour;
-	if (ray->side == 1)
-		colour = RED;
+	// int colour;
+	// if (ray->side == 1)
+	// 	colour = RED;
+	// else
+	// 	colour = DARK_RED;
+
+	// int y = start;
+	// while (y++ < end)
+	// 	my_pixel_put(data, x, y, colour);
+
+	// t_img *tex;
+	// if (ray->side == 0 && ray->ray_dir_x < 0)
+	// 	tex = &data->textures[2]; // west
+	// if (ray->side == 0 && ray->ray_dir_x > 0)
+	// 	tex = &data->textures[3]; // east
+	// if (ray->side == 1 && ray->ray_dir_y < 0)
+	// 	tex = &data->textures[0]; // north
+	// if (ray->side == 1 && ray->ray_dir_y > 0)
+	// 	tex = &data->textures[1]; // south
+
+	t_img *tex = &data->textures[NORTH]; 
+    if (ray->side == 0)
+    {
+        if (ray->ray_dir_x < 0) 
+            tex = &data->textures[WEST];
+        else 
+            tex = &data->textures[EAST];
+    }
+    else
+    {
+        if (ray->ray_dir_y < 0) 
+            tex = &data->textures[NORTH];
+        else 
+            tex = &data->textures[SOUTH];
+    }
+
+	// int tex_num = data->maps[ray->map_x][ray->map_y];
+	double wallX;
+	if (ray->side == 0)
+		wallX = data->player.player_y + ray->perp_wall_dist * ray->ray_dir_y;
 	else
-		colour = DARK_RED;
+		wallX = data->player.player_x + ray->perp_wall_dist * ray->ray_dir_x;
+	wallX -= floor(wallX);
+
+	int texX = (int)(wallX * tex->width);
+	if (ray->side == 0 && ray->ray_dir_x > 0)
+		texX = tex->width - texX - 1;
+	if (ray->side == 1 && ray->ray_dir_y < 0)
+		texX = tex->width - texX - 1;
+
+	double step = 1.0 * tex->height / line_height;
+	double tex_pos = (start - HEIGHT / 2 + line_height / 2) * step;
 
 	int y = start;
-	while (y++ < end)
-		my_pixel_put(data, x, y, colour);
+	while (y < end)
+	{
+		int tex_y = (int)tex_pos;
+        if (tex_y < 0)
+			tex_y = 0;
+        if (tex_y >= tex->height)
+			tex_y = tex->height - 1;
+        tex_pos += step;
+
+		int colour = get_pixel(tex, texX, tex_y);
+		put_pixel(&data->frame, x, y, colour);
+		y++;
+	}
+}
+
+void draw_background(t_data *data)
+{
+    int x, y;
+
+    // Ceiling (top half)
+    for (y = 0; y < HEIGHT / 2; y++)
+    {
+        for (x = 0; x < WIDTH; x++)
+            put_pixel(&data->frame, x, y, RED); // sky blue
+    }
+
+    // Floor (bottom half)
+    for (y = HEIGHT / 2; y < HEIGHT; y++)
+    {
+        for (x = 0; x < WIDTH; x++)
+            put_pixel(&data->frame, x, y, DARK_RED); // forest green
+    }
 }
 
 void raycast(t_data *data)
@@ -308,6 +409,7 @@ void raycast(t_data *data)
 		count_step(&ray, data);
 		perform_dda(&ray, data);
 		count_perp_distance(&ray);
+		draw_background(data);
 		draw_walls(&ray, x, data);
 		x++;
 	}
@@ -323,7 +425,7 @@ void clear_image(t_data *data)
 		y = 0;
 		while (y < HEIGHT)
 		{
-			my_pixel_put(data, x, y, 0);
+			put_pixel(&data->frame, x, y, 0);
 			y++;
 		}
 		x++;
@@ -481,7 +583,6 @@ void move_player(t_data *data)
 			data->player.player_y = new_y;
 	}
 
-
 	// rotate to right
 	if (data->keys.right == true)
 	{
@@ -500,9 +601,10 @@ void move_player(t_data *data)
 int render(t_data *data)
 {
 	clear_image(data);
+	draw_background(data);
 	raycast(data);
 	move_player(data);
-	mlx_put_image_to_window(data->mlx, data->win, data->img, 0, 0);
+	mlx_put_image_to_window(data->mlx, data->win, data->frame.img, 0, 0);
 
 	return (0);
 }
