@@ -26,7 +26,7 @@ LIBFT = library/libft.a
 
 SRC_DIR = src
 # SRC_FILES = $(wildcard $(SRC_DIR)/*.c)
-SRC_FILES = src/main.c
+SRC_FILES = src/combo.c
 # SRC = $(addprefix $(SRC_DIR)/, $(SRC_FILES))
 
 # BONUS_FILES = 

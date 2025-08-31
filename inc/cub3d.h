@@ -113,6 +113,17 @@ typedef struct s_key
     bool right;
 }	t_key;
 
+typedef struct s_img
+{
+	void *img;
+	char *addr;
+	int bpp;
+	int line_len;
+	int endian;
+	int width;
+	int height;
+}	t_img;
+
 typedef struct s_data
 {
 	char		**maps; // an 2d array of map
@@ -127,6 +138,8 @@ typedef struct s_data
 	int bpp; // bits per pixel
 	int line_len;
 	int endian;
+	t_img frame;
+	t_img textures[4];
 	t_key keys;
 
 }	t_data;
