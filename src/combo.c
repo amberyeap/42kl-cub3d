@@ -74,9 +74,10 @@ void	print_map(char **map)
 	int i = 0;
 	while (map[i])
 	{
-		printf("%s", map[i]);
+		printf("%s\n", map[i]);
 		i++;
 	}
+	// printf("\n");
 }
 
 void	flood_fill(t_data *data, char **map, int x, int y)
@@ -138,9 +139,10 @@ void	pad_map(char **map)
 			j++;
 		}
 		while (j < max_len)
-			newline[j++] = '0';
+			newline[j++] = ' ';
 		free(map[i]);
 		map[i] = newline;
+		// printf("pad_map: %s\n", map[i]);
 	}
 }
 
@@ -163,12 +165,12 @@ void	find_player(t_data *data, char **map)
 				data->player.player_x = i;
 				data->player.player_y = j;
 				data->player.p_direction = map[i][j];
+				map[i][j] = '0';
 				count++;
 			}
-			// if (map[i][j] != '1')
-			// 	map[i][j] = '0';
 			j++;
 		}
+		// printf("find_player: %s\n", map[i]);
 	}
 	count_check(count);
 }
@@ -187,7 +189,7 @@ void	valid_char(char **map)
 		while (map[i][j])
 		{
 			c = map[i][j];
-			printf("what is it: %c\n", c);
+			// printf("what is it: %c\n", c);
 			if (c != '0' && c != '1' && c != 'N' && c != 'S'
 				&& c != 'E' && c != 'W' && c != ' ')
 			{
@@ -198,6 +200,7 @@ void	valid_char(char **map)
 			j++;
 		}
 		i++;
+		// printf("valid_char: %s\n", map[i]);
 	}
 }
 
@@ -207,8 +210,8 @@ void	main_parse(char **map)
 	int	j;
 	int	only_space;
 
-	i = 0;
-	while (map[i])
+	i = -1;
+	while (map[++i])
 	{
 		j = 0;
 		only_space = 1; // assume that the line is all space first
@@ -226,7 +229,8 @@ void	main_parse(char **map)
 			printf("empty line at row %d: '%s'\n", i, map[i]);
 			exit_error("invalid map here");
 		}
-		i++;
+		// i++;
+		// printf("main_parse: %s\n", map[i]);
 	}
 }
 
@@ -248,9 +252,11 @@ char	**copy_map(char **map)
 		copy[i] = ft_strdup(map[i]);
 		if (!copy[i])
 			exit_error("bro failed to make copy map");
+		// printf("copy_map: %s\n", copy[i]);
 		i++;
 	}
 	copy[i] = NULL;
+	// print_map(copy);
 	return (copy);
 }
 
@@ -268,14 +274,24 @@ void	free_array(char **str)
 	free(str);
 }
 
+/* count rows */
+int map_height(char **m)
+{
+    int h = 0;
+    while (m && m[h])
+        h++;
+    return (h);
+}
+
 void	main_parse2(t_data *data)
 {
 	char	**map_copy;
 	char	**only_map;
 	int		i = 0, j = 0;
 	int		start;
-
+	
 	// 🔍 Find the first map line index
+	printf("map_info.file[0]: %s\n", data->map_info.file[i]);
 	while (data->map_info.file[i])
 	{
 		if (is_map_line(data->map_info.file[i])) // check if line starts with 1 or 0
@@ -283,6 +299,7 @@ void	main_parse2(t_data *data)
 		i++;
 	}
 	start = i;
+	printf("map_info.file[i]: %s\n", data->map_info.file[i]);
 
 	// 🧼 Copy only map lines from data->map_info.file
 	while (data->map_info.file[i])
@@ -298,7 +315,7 @@ void	main_parse2(t_data *data)
 			only_map[j] = ft_strdup(data->map_info.file[i]);
 			if (!only_map[j])
 				exit_error("strdup failed");
-			printf("MAP[%d] = '%s'\n", j, only_map[j]);  // ✅ Now safe
+			// printf("MAP[%d] = '%s'\n", j, only_map[j]);  // ✅ Now safe
 			j++;
 		}
 		i++;
@@ -314,7 +331,7 @@ void	main_parse2(t_data *data)
 	flood_fill(data, map_copy, data->player.player_x, data->player.player_y);
 	print_map(map_copy);
 	free_array(map_copy);
-	free_array(only_map);  // ❗ better use free_array to avoid leaks
+	// free_array(only_map);  // ❗ better use free_array to avoid leaks
 }
 
 //Check for if all configuration is stores
@@ -402,7 +419,7 @@ void	can_open_file(char *file, int fd)
 	fd = open(file, O_RDONLY);
 	if (fd < 0)
 	{
-		printf("%d\n", fd);
+		// printf("%d\n", fd);
 		// printf("%s\n", file);
 		exit_error("File cannot be open");
 	}
@@ -449,7 +466,7 @@ char	*get_path(char *line, int mode)
 	free(path);
 	if (!trim)
 		exit_error("trimmed failed");
-	printf("trim: %s\n", trim);
+	// printf("trim: %s\n", trim);
 	if (mode == TEX)
 	{
 		if (ft_strlen(trim) < 4 || !ft_strnstr(trim + ft_strlen(trim) - 4, ".xpm", 4))
@@ -491,7 +508,7 @@ int	readmap(t_data *data)
 		exit_error("malloc failed");
 	
 	line = get_next_line(data->map_info.fd);
-	printf("line here is %s\n", line);
+	// printf("line here is %s\n", line);
 	// to process the texture files
 	// could there be an endless loop here? FIXED - missing a get_next_line within the loop to move to next line
 	while (line)
@@ -500,30 +517,32 @@ int	readmap(t_data *data)
 		while (ft_isspace(line[j]))
 			j++;
 		parsing_config(data, line, j);
-		printf("before map: %s\n", line);
-		printf("start of map: %i\n",data->map_start);
+		// printf("before map: %s\n", line);
+		// printf("start of map: %i\n",data->map_start);
 		if (data->map_start)  // map begins
 		{
-			printf("why break my heart?\n");
+			// printf("why break my heart?\n");
 			free(line);
 			break;
 		}
-		printf("line here before free is %s\n", line);
+		// printf("line here before free is %s\n", line);
 		free(line);
 		line = get_next_line(data->map_info.fd);
+		// printf("next read line: %s\n", line);
 	}
 	// line = get_next_line(data->map_info.fd);
 	// printf("next line here is %s\n", line);
 
 	// Then: read only the map lines
-	while ((line = get_next_line(data->map_info.fd)))
+	while (line)
 	{
-		printf("in a map:%s \n",line);
+		// printf("in a map:%s \n",line);
 		map_lines[i] = ft_strdup(line);
 		if (!map_lines[i])
 			exit_error("failed to strdup map line");
 		free(line);
 		i++;
+		line = get_next_line(data->map_info.fd);
 	}
 	map_lines[i] = NULL;
 
