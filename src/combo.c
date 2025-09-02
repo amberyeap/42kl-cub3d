@@ -82,11 +82,11 @@ void	print_map(char **map)
 void	flood_fill(t_data *data, char **map, int x, int y)
 {
 	if (x < 0 || y < 0 || !map[x] || y >= ft_strlen(map[x]))// unclosed map
-		exit_error("Invalid: Map is enclosed");
+		exit_error("Invalid 1: Map is enclosed");
 	if (map[x][y] == '1' || map[x][y] == 'F')//check is wall visited
 		return ;
 	if (map[x][y] == ' ')
-		exit_error("Invalid: Map is enclosed"); //if a space
+		exit_error("Invalid 2: Map is enclosed"); //if a space
 	map[x][y] = 'F'; //mark the visited place
 	flood_fill(data, map, x + 1, y); //down
 	flood_fill(data, map, x - 1, y); //up
@@ -173,6 +173,7 @@ void	find_player(t_data *data, char **map)
 	count_check(count);
 }
 
+// FIXED - when it reaches to the end of line, exits with error instead of moving to the next line
 void	valid_char(char **map)
 {
 	int		i;
@@ -185,11 +186,15 @@ void	valid_char(char **map)
 		j = 0;
 		while (map[i][j])
 		{
-			printf("what is it: %c\n",map[i][j]);
 			c = map[i][j];
+			printf("what is it: %c\n", c);
 			if (c != '0' && c != '1' && c != 'N' && c != 'S'
 				&& c != 'E' && c != 'W' && c != ' ')
+			{
+				if (ft_isspace(c))
+					break;
 				exit_error("Error Invalid Characters");
+			}
 			j++;
 		}
 		i++;
