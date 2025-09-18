@@ -6,7 +6,7 @@
 /*   By: ayeap <ayeap@student.42kl.edu.my>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/29 19:14:14 by ayeap             #+#    #+#             */
-/*   Updated: 2025/08/12 13:55:09 by ayeap            ###   ########.fr       */
+/*   Updated: 2025/09/18 13:38:04 by ayeap            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,10 +28,10 @@
 # define HEIGHT 1080
 
 //Configure
-# define NORTH		1
-# define SOUTH		2
-# define WEST		3
-# define EAST		4
+# define NORTH		0
+# define SOUTH		1
+# define WEST		2
+# define EAST		3
 # define FLOOR		5
 # define CEILING	6
 
