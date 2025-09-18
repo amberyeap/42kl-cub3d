@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: ayeap <ayeap@student.42kl.edu.my>          +#+  +:+       +#+         #
+#    By: muhabin- <muhabin-@student.42kl.edu.my>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/04/29 12:06:13 by ayeap             #+#    #+#              #
-#    Updated: 2025/08/12 15:47:04 by ayeap            ###   ########.fr        #
+#    Updated: 2025/09/18 11:19:05 by muhabin-         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -25,16 +25,19 @@ INC = -Iinc
 LIBFT = library/libft.a
 
 SRC_DIR = src
-# SRC_FILES = $(wildcard $(SRC_DIR)/*.c)
-SRC_FILES = src/main.c
-# SRC = $(addprefix $(SRC_DIR)/, $(SRC_FILES))
-
-# BONUS_FILES = 
-# BONUS_SRC = $(addprefix $(SRC_DIR)/, $(BONUS_FILES))
+SRC_FILES = \
+	src/key_hook.c \
+	src/raycast.c \
+	src/utils.c \
+	src/utils2.c \
+	src/parsing/color_parse.c \
+	src/parsing/config_parse.c \
+	src/parsing/parser.c \
+	src/parsing/parser2.c \
+	src/validation/map_validation.c \
 
 OBJ_DIR = obj
 OBJ = $(SRC_FILES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
-# BONUS_OBJ = $(BONUS_SRC:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
 $(NAME): $(OBJ_DIR) $(OBJ) $(LIBFT)
 	$(CC) $(CFLAGS) $(OBJ) -L$(MLX_DIR) -lmlx_Linux $(LIBFT) $(MLX_INC) $(MLX_FLAGS) -o $(NAME)
@@ -50,9 +53,6 @@ $(LIBFT):
 	make -C library
 
 all: $(NAME)
-
-# bonus: $(OBJ_DIR) $(OBJ) $(BONUS_OBJ) $(LIBFT)
-# 	$(CC) $(CFLAGS) $(OBJ) $(BONUS_OBJ) $(LIBFT) -o $(NAME)
 
 clean:
 	$(RM) $(OBJ) $(BONUS_OBJ)

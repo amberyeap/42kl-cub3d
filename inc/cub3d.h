@@ -73,8 +73,8 @@ typedef struct s_map
 
 typedef struct s_player
 {
-	int				player_x;
-	int				player_y;
+	double				player_x;
+	double				player_y;
 	char			p_direction; // player direction
 
 	double angle;
@@ -113,6 +113,17 @@ typedef struct s_key
     bool right;
 }	t_key;
 
+typedef struct s_img
+{
+	void *img;
+	char *addr;
+	int bpp;
+	int line_len;
+	int endian;
+	int width;
+	int height;
+}	t_img;
+
 typedef struct s_data
 {
 	char		**maps; // an 2d array of map
@@ -127,18 +138,59 @@ typedef struct s_data
 	int bpp; // bits per pixel
 	int line_len;
 	int endian;
+	t_img frame;
+	t_img textures[4];
 	t_key keys;
 
 }	t_data;
 
+// color_parse.c
+void	save_color(t_data *data, char **rgb, int mode);
+int	valid_color(char **rgb);
+
+// config_parse.c
+void	color_check(t_data *data, char *line, int mode);
+void	texture_check(t_data *data, char *line, int dir);
+char	*get_path(char *line, int mode);
+void	parsing_config(t_data *data, char *line, int i);
+
+// key_hook.c
+void init_keys(t_key *keys);
+void move_player(t_data *data);
+int key_press(int keycode, t_data *data);
+int key_release(int keycode, t_data *data);
+
+// map_validation.c
+void	flood_fill(t_data *data, char **map, int x, int y);
+char	**copy_map(char **map);
+void	pad_map(char **map);
+void	find_player(t_data *data, char **map);
+void	valid_char(char **map);
+
+// parser.c
+int	readmap(t_data *data);
+int	map_read(t_data *data, char *argv);
+
+// parser2.c
+void	print_map(char **map); // to delete
+void	main_parse(char **map);
+void	parse_map(t_data *data);
+
 // utils.c
 int		error_msg(char *msg, int status);
 int		is_cub_file(char *argv);
-void	exit_error(const char *msg);
-int		empty_line(char *line);
+void	can_open_file(char *file, int fd);
+void	free_array(char **str);
 int		is_map_line(char *line);
 
-int	map_read(t_data *data, char *argv);
+// utils2.c
+int	count_line(char *map);
+void	exit_error(const char *msg);
+int	map_height(char **m);
+int	get_len(char **map);
+void	count_check(int count);
+
+int	empty_line(char *line);
 
 typedef struct s_map
 {
