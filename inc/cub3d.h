@@ -192,23 +192,4 @@ void	count_check(int count);
 
 int	empty_line(char *line);
 
-typedef struct s_map
-{
-	int		fd; //fd for opening the map
-	int		line_map; // how many lines inside the map files
-	char	**file;
-
-} t_map;
-
-typedef struct s_data
-{
-	char	**maps; // an 2d array of map
-	t_map	map_info;
-
-}	t_data;
-
-// utils.c
-int		error_msg(char *msg, int status);
-int		is_cub_file(char *argv);
-
 #endif

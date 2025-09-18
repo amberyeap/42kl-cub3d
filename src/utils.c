@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "cub3d.h"
+#include "../inc/cub3d.h"
 
 int	error_msg(char *msg, int status)
 {
