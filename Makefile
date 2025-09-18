@@ -6,7 +6,7 @@
 #    By: ayeap <ayeap@student.42kl.edu.my>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/04/29 12:06:13 by ayeap             #+#    #+#              #
-#    Updated: 2025/09/18 13:44:21 by ayeap            ###   ########.fr        #
+#    Updated: 2025/09/18 15:31:11 by ayeap            ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -27,10 +27,16 @@ MINILIB = -lmlx
 
 SRC_DIR = src
 SRC_FILES = \
+	src/draw.c \
+	src/init_texture.c \
+	src/init.c \
 	src/key_hook.c \
+	src/main.c \
+	src/player_movement.c \
 	src/raycast.c \
 	src/utils.c \
 	src/utils2.c \
+	src/utils3.c \
 	src/parsing/color_parse.c \
 	src/parsing/config_parse.c \
 	src/parsing/parser.c \

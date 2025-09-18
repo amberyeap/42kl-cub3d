@@ -6,22 +6,11 @@
 /*   By: ayeap <ayeap@student.42kl.edu.my>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 16:18:23 by muhabin-          #+#    #+#             */
-/*   Updated: 2025/09/18 11:50:08 by ayeap            ###   ########.fr       */
+/*   Updated: 2025/09/18 14:17:32 by ayeap            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../inc/cub3d.h"
-
-void	print_map(char **map)
-{
-	int i = 0;
-	while (map[i])
-	{
-		printf("%s\n", map[i]);
-		i++;
-	}
-	// printf("\n");
-}
 
 static int	find_map_start(t_data *data)
 {

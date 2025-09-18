@@ -6,7 +6,7 @@
 /*   By: ayeap <ayeap@student.42kl.edu.my>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/26 13:29:30 by muhabin-          #+#    #+#             */
-/*   Updated: 2025/09/18 11:20:57 by ayeap            ###   ########.fr       */
+/*   Updated: 2025/09/18 14:56:15 by ayeap            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,18 +63,4 @@ int	is_map_line(char *line)
 		i++;
 	}
 	return (0);
-}
-
-int	empty_line(char *line)
-{
-	int	i;
-
-	i = 0;
-	while (line[i])
-	{
-		if (line[i] != ' ' && line[i] != '\t' && line[i] != '\n')
-			return (0);
-		i++;
-	}
-	return (1);
 }
