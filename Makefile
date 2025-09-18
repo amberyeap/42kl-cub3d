@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: muhabin- <muhabin-@student.42kl.edu.my>    +#+  +:+       +#+         #
+#    By: ayeap <ayeap@student.42kl.edu.my>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/04/29 12:06:13 by ayeap             #+#    #+#              #
-#    Updated: 2025/09/18 11:19:05 by muhabin-         ###   ########.fr        #
+#    Updated: 2025/09/18 13:34:19 by ayeap            ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -18,11 +18,12 @@ RM = rm -rf
 
 MLX_DIR = minilibx-linux
 MLX_INC = -I$(MLX_DIR)
-MLX_FLAGS = -lXext -lX11 -lm #-lz
+MLX_FLAGS = -lXext -lX11 -lm -lz
 
 INC = -Iinc
 
 LIBFT = library/libft.a
+MINILIB = -lmlx
 
 SRC_DIR = src
 SRC_FILES = \
@@ -39,8 +40,8 @@ SRC_FILES = \
 OBJ_DIR = obj
 OBJ = $(SRC_FILES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
-$(NAME): $(OBJ_DIR) $(OBJ) $(LIBFT)
-	$(CC) $(CFLAGS) $(OBJ) -L$(MLX_DIR) -lmlx_Linux $(LIBFT) $(MLX_INC) $(MLX_FLAGS) -o $(NAME)
+$(NAME): $(OBJ_DIR) $(OBJ) $(LIBFT) $(MINILIB)
+	$(CC) $(CFLAGS) $(OBJ) -L$(MLX_DIR) $(MINILIB) $(LIBFT) $(MLX_INC) $(MLX_FLAGS) -o $(NAME)
 
 $(OBJ_DIR):
 	mkdir $(OBJ_DIR)
@@ -52,16 +53,21 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 $(LIBFT):
 	make -C library
 
+$(MINILIB):
+	make -C $(MLX_DIR)
+
 all: $(NAME)
 
 clean:
 	$(RM) $(OBJ) $(BONUS_OBJ)
 	$(RM) $(OBJ_DIR)
 	make clean -C library
+	make clean -C $(MLX_DIR)
 
 fclean: clean
 	$(RM) $(NAME)
 	make fclean -C library
+	make clean -C $(MLX_DIR)
 
 re: fclean all
 
