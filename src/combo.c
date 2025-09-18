@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   combo.c                                            :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: ayeap <ayeap@student.42kl.edu.my>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/07/25 16:42:50 by ayeap             #+#    #+#             */
-/*   Updated: 2025/07/25 16:42:50 by ayeap            ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "../inc/cub3d.h"
 
 void init_keys(t_key *keys)
@@ -82,17 +70,15 @@ void	print_map(char **map)
 
 void	flood_fill(t_data *data, char **map, int x, int y)
 {
-	if (x < 0 || y < 0 || !map[x] || y >= ft_strlen(map[x]))// unclosed map
-		exit_error("Invalid 1: Map is enclosed");
-	if (map[x][y] == '1' || map[x][y] == 'F')//check is wall visited
-		return ;
-	if (map[x][y] == ' ')
-		exit_error("Invalid 2: Map is enclosed"); //if a space
-	map[x][y] = 'F'; //mark the visited place
-	flood_fill(data, map, x + 1, y); //down
-	flood_fill(data, map, x - 1, y); //up
-	flood_fill(data, map, x, y + 1); //right
-	flood_fill(data, map, x, y - 1); //left
+	if (y < 0 || x < 0 || !map[y] || x >= (int)ft_strlen(map[y]) || map[y][x] == ' ')
+		error_msg("Error: map not closed\n", 1);
+	if (map[y][x] == '1' || map[y][x] == 'F')
+		return;
+	map[y][x] = 'F';
+	flood_fill(data, map, x + 1, y);
+	flood_fill(data, map, x - 1, y);
+	flood_fill(data, map, x, y + 1);
+	flood_fill(data, map, x, y - 1);
 }
 
 void	count_check(int count)
@@ -162,8 +148,8 @@ void	find_player(t_data *data, char **map)
 			if (map[i][j] == 'N' || map[i][j] == 'S'
 				|| map[i][j] == 'E' || map[i][j] == 'W')
 			{
-				data->player.player_x = i;
-				data->player.player_y = j;
+				data->player.player_x = j + 0.5;
+				data->player.player_y = i + 0.5;
 				data->player.p_direction = map[i][j];
 				map[i][j] = '0';
 				count++;
@@ -193,7 +179,7 @@ void	valid_char(char **map)
 			if (c != '0' && c != '1' && c != 'N' && c != 'S'
 				&& c != 'E' && c != 'W' && c != ' ')
 			{
-				if (ft_isspace(c))
+				if (ft_isspace(c)) // issue!
 					break;
 				exit_error("Error Invalid Characters");
 			}
@@ -329,8 +315,9 @@ void	main_parse2(t_data *data)
 	pad_map(only_map);
 	map_copy = copy_map(only_map);
 	flood_fill(data, map_copy, data->player.player_x, data->player.player_y);
-	print_map(map_copy);
+	// print_map(map_copy);
 	free_array(map_copy);
+	data->maps = only_map;
 	// free_array(only_map);  // ❗ better use free_array to avoid leaks
 }
 
@@ -373,7 +360,7 @@ int	valid_color(char **rgb)
 	if (!rgb[0] || !rgb[1] || !rgb[2] || rgb[3])
 		return (0);
 	i = 0;
-	while(i < 3)
+	while (i < 3)
 	{
 		j = 0;
 		while (rgb[i][j])
@@ -390,28 +377,68 @@ int	valid_color(char **rgb)
 	return (1);
 }
 
-//Check for valid color
-void	color_check(t_data *data, char *line, int mode)
+int create_rgb(int r, int g, int b)
 {
-	int		i;
-	// int		j;
-	char	*trim;
-	char	**rgb;
-
-	i = 0;
-	// j = 0;
-	while (ft_isspace(line[i]))
-		i++;
-	trim = ft_strdup(line + i);
-	if (!trim)
-		exit_error("failed to copy");
-	rgb = ft_split(trim, ',');
-	if (valid_color(rgb))
-		exit_error("wrong color");
-	save_color(data, rgb, mode);
-	free(trim);
-	free_array(rgb);
+    return ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF);
 }
+
+
+//Check for valid color
+// void	color_check(t_data *data, char *line, int mode)
+// {
+// 	int		i;
+// 	// int		j;
+// 	char	*trim;
+// 	char	**rgb;
+
+// 	i = 0;
+// 	// j = 0;
+// 	while (ft_isspace(line[i]))
+// 		i++;
+// 	trim = ft_strdup(line + i);
+// 	if (!trim)
+// 		exit_error("failed to copy");
+// 	rgb = ft_split(trim, ',');
+// 	for (int x = 0; x < 3; x++)
+// 		printf("%s\n", rgb[x]);
+// 	if (!valid_color(rgb))
+// 		exit_error("wrong color");
+// 	save_color(data, rgb, mode);
+// 	free(trim);
+// 	free_array(rgb);
+// }
+void color_check(t_data *data, char *line, char c)
+{
+    char **rgb;
+    char *tmp;
+
+    rgb = ft_split(line, ',');
+    if (!rgb)
+        exit_error("malloc error in color_check");
+
+    // trim spaces around each component
+    for (int i = 0; rgb[i]; i++)
+    {
+        tmp = ft_strtrim(rgb[i], " \t\r\n");
+        free(rgb[i]);
+        rgb[i] = tmp;
+    }
+
+    if (!valid_color(rgb))
+        exit_error("wrong color");
+
+    if (c == 'F')
+        data->map_info.floor = create_rgb(ft_atoi(rgb[0]),
+                                ft_atoi(rgb[1]),
+                                ft_atoi(rgb[2]));
+    else
+        data->map_info.ceiling = create_rgb(ft_atoi(rgb[0]),
+                                  ft_atoi(rgb[1]),
+                                  ft_atoi(rgb[2]));
+
+    free_array(rgb);
+}
+
 
 //check if the map files can be open
 void	can_open_file(char *file, int fd)
@@ -433,17 +460,17 @@ void	texture_check(t_data *data, char *line, int dir)
 	// line += 3;
 	// printf("opening: '%s'\n", line);
 	if (dir == NORTH && !data->map_info.north)
-		data->map_info.north = line;
-		// data->map_info.north = ft_strdup(line);
+		// data->map_info.north = line;
+		data->map_info.north = ft_strdup(line);
 	else if (dir == SOUTH && !data->map_info.south)
-		data->map_info.south = line;
-		// data->map_info.south = ft_strdup(line);
+		// data->map_info.south = line;
+		data->map_info.south = ft_strdup(line);
 	else if (dir == WEST && !data->map_info.west)
-		data->map_info.west = line;
-		// data->map_info.west = ft_strdup(line);
+		// data->map_info.west = line;
+		data->map_info.west = ft_strdup(line);
 	else if (dir == EAST && !data->map_info.east)
-		data->map_info.east = line;
-		// data->map_info.east = ft_strdup(line);
+		// data->map_info.east = line;
+		data->map_info.east = ft_strdup(line);
 	else
 		exit_error("Duplicating failed");
 	can_open_file(line, 0);
@@ -522,7 +549,7 @@ int	readmap(t_data *data)
 		if (data->map_start)  // map begins
 		{
 			// printf("why break my heart?\n");
-			free(line);
+			// free(line);
 			break;
 		}
 		// printf("line here before free is %s\n", line);
@@ -546,7 +573,7 @@ int	readmap(t_data *data)
 	}
 	map_lines[i] = NULL;
 
-	if (everything_good(data))
+	if (!everything_good(data))
 		exit_error("Wrong Configuration");
 
 	data->map_info.file = map_lines;
@@ -609,28 +636,28 @@ void init_textures(t_data *data)
 	// data->map_info.east = "assets/sprites/east_wall.xpm";
 	// data->map_info.west = "assets/sprites/west_wall.xpm";
 
+	if (!data->map_info.north || !data->map_info.south
+        || !data->map_info.east || !data->map_info.west)
+        exit_error("Texture path missing");
+
 	data->textures[NORTH].img = mlx_xpm_file_to_image(data->mlx, data->map_info.north, &data->textures[NORTH].width, &data->textures[NORTH].height);
 	data->textures[SOUTH].img = mlx_xpm_file_to_image(data->mlx, data->map_info.south, &data->textures[SOUTH].width, &data->textures[SOUTH].height);
 	data->textures[EAST].img = mlx_xpm_file_to_image(data->mlx, data->map_info.east, &data->textures[EAST].width, &data->textures[EAST].height);
 	data->textures[WEST].img = mlx_xpm_file_to_image(data->mlx, data->map_info.west, &data->textures[WEST].width, &data->textures[WEST].height);
 
-	int i = 0;
-	while (i < 4)
-	{
-		if (!data->textures[i].img)
-		{
-			printf("Failed to load image in: %d\n", i);
-			exit(1);
-		}
-		i++;
-	}
+	if (!data->textures[NORTH].img)
+		exit_error("Failed to load north_wall.xpm");
+	if (!data->textures[SOUTH].img)
+		exit_error("Failed to load south_wall.xpm");
+	if (!data->textures[EAST].img)
+		exit_error("Failed to load east_wall.xpm");
+	if (!data->textures[WEST].img)
+		exit_error("Failed to load west_wall.xpm");
 
-	i = 0;
-	while (i < 4)
-	{
-		data->textures[i].addr = mlx_get_data_addr(data->textures[i].img, &data->textures[i].bpp, &data->textures[i].line_len, &data->textures[i].endian);
-		i++;
-	}
+	data->textures[NORTH].addr = mlx_get_data_addr(data->textures[NORTH].img, &data->textures[NORTH].bpp, &data->textures[NORTH].line_len, &data->textures[NORTH].endian);
+	data->textures[SOUTH].addr = mlx_get_data_addr(data->textures[SOUTH].img, &data->textures[SOUTH].bpp, &data->textures[SOUTH].line_len, &data->textures[SOUTH].endian);
+	data->textures[EAST].addr = mlx_get_data_addr(data->textures[EAST].img, &data->textures[EAST].bpp, &data->textures[EAST].line_len, &data->textures[EAST].endian);
+	data->textures[WEST].addr = mlx_get_data_addr(data->textures[WEST].img, &data->textures[WEST].bpp, &data->textures[WEST].line_len, &data->textures[WEST].endian);
 }
 
 void init_frame(t_data *data)
@@ -667,6 +694,29 @@ void put_pixel(t_img *img, int x, int y, int colour)
 	*(unsigned int *)dest = colour;
 }
 
+void init_player(t_data *data)
+{
+	t_player *player = &data->player;
+
+	if (player->p_direction == 'N')
+		player->angle = 3 * M_PI / 2;
+	else if (player->p_direction == 'S')
+		player->angle = M_PI / 2;
+	else if (player->p_direction == 'E')
+		player->angle = 0;
+	else if (player->p_direction == 'W')
+		player->angle = M_PI;
+	else
+		player->angle = M_PI;
+
+	// player->angle = M_PI;
+	player->dir_x = cos(player->angle);
+	player->dir_y = sin(player->angle);
+
+	player->plane_x = cos(player->angle + M_PI_2) * 0.66;
+	player->plane_y = sin(player->angle + M_PI_2) * 0.66;
+}
+
 void init_ray(t_ray *ray, int x, t_data *data)
 {
 	double camera_x = 2 * x / (double)WIDTH - 1;
@@ -676,7 +726,11 @@ void init_ray(t_ray *ray, int x, t_data *data)
 	ray->delta_dist_y = (ray->ray_dir_y == 0) ? 1e30 : fabs(1 / ray->ray_dir_y);
 	ray->map_x = (int)data->player.player_x;
 	ray->map_y = (int)data->player.player_y;
+		// printf("mapy: %d, mapx: %d\n", ray->map_y, ray->map_x);
 	ray->hit = 0;
+	ray->step_x = 0;
+	ray->step_y = 0;
+	ray->perp_wall_dist = 0;
 }
 
 void count_step(t_ray *ray, t_data *data)
@@ -719,8 +773,11 @@ void perform_dda(t_ray *ray, t_data *data)
 			ray->map_y += ray->step_y;
 			ray->side = 1;
 		}
-		if (data->maps[ray->map_x][ray->map_y] > 0)
+		// printf("mapy: %d, mapx: %d\n", ray->map_y, ray->map_x);
+
+		if (data->maps[ray->map_y][ray->map_x] == '1')
 			ray->hit = 1;
+		// printf("test");
 	}
 }
 
@@ -813,19 +870,23 @@ void draw_walls(t_ray *ray, int x, t_data *data)
 
 void draw_background(t_data *data)
 {
-    int x, y;
+	int	y;
+	int	x;
 
-    for (y = 0; y < HEIGHT / 2; y++)
-    {
-        for (x = 0; x < WIDTH; x++)
-            put_pixel(&data->frame, x, y, RED);
-    }
-
-    for (y = HEIGHT / 2; y < HEIGHT; y++)
-    {
-        for (x = 0; x < WIDTH; x++)
-            put_pixel(&data->frame, x, y, DARK_RED);
-    }
+	y = 0;
+	while (y < HEIGHT)
+	{
+		x = 0;
+		while (x < WIDTH)
+		{
+			if (y < HEIGHT / 2)
+				put_pixel(&data->frame, x, y, data->map_info.ceiling);
+			else
+				put_pixel(&data->frame, x, y, data->map_info.floor);
+			x++;
+		}
+		y++;
+	}
 }
 
 void raycast(t_data *data)
@@ -835,13 +896,16 @@ void raycast(t_data *data)
 
 	while (x < WIDTH)
 	{
+		// init_player(data);
 		init_ray(&ray, x, data);
 		count_step(&ray, data);
 		perform_dda(&ray, data);
 		count_perp_distance(&ray);
 		draw_walls(&ray, x, data);
+		
 		x++;
 	}
+	mlx_put_image_to_window(data->mlx, data->win, data->frame.img, 0, 0);
 }
 
 void clear_image(t_data *data)
@@ -868,9 +932,18 @@ void update_direction(t_player *player)
 	player->plane_y = sin(player->angle + M_PI_2) * 0.66;
 }
 
+void move(double new_x, double new_y, t_data *data)
+{
+	if (data->maps[(int)data->player.player_y][(int)new_x] == '0')
+		data->player.player_x = new_x;
+	if (data->maps[(int)new_y][(int)data->player.player_x] == '0')
+		data->player.player_y = new_y;
+
+}
+
 void move_player(t_data *data)
 {
-	double move_speed = 0.03;
+	double move_speed = 0.05;
 	double rot_speed = 0.02;
 
 	// move forward
@@ -879,10 +952,7 @@ void move_player(t_data *data)
 		double new_x = data->player.player_x + cos(data->player.angle) * move_speed;
 		double new_y = data->player.player_y + sin(data->player.angle) * move_speed;
 
-		if (data->maps[(int)new_x][(int)(data->player.player_y)] == 0)
-			data->player.player_x = new_x;
-		if (data->maps[(int)(data->player.player_x)][(int)new_y] == 0)
-			data->player.player_y = new_y;
+		move(new_x, new_y, data);
 	}
 
 	// move backward
@@ -891,10 +961,7 @@ void move_player(t_data *data)
 		double new_x = data->player.player_x - cos(data->player.angle) * move_speed;
 		double new_y = data->player.player_y - sin(data->player.angle) * move_speed;
 
-		if (data->maps[(int)new_x][(int)(data->player.player_y)] == 0)
-			data->player.player_x = new_x;
-		if (data->maps[(int)(data->player.player_x)][(int)new_y] == 0)
-			data->player.player_y = new_y;
+		move(new_x, new_y, data);
 	}
 
 	// strafe right (D)
@@ -906,10 +973,7 @@ void move_player(t_data *data)
 		double new_x = data->player.player_x + strafe_x * move_speed;
 		double new_y = data->player.player_y + strafe_y * move_speed;
 
-		if (data->maps[(int)new_x][(int)(data->player.player_y)] == 0)
-			data->player.player_x = new_x;
-		if (data->maps[(int)(data->player.player_x)][(int)new_y] == 0)
-			data->player.player_y = new_y;
+		move(new_x, new_y, data);
 	}
 
 	// strafe left (A)
@@ -921,10 +985,7 @@ void move_player(t_data *data)
 		double new_x = data->player.player_x + strafe_x * move_speed;
 		double new_y = data->player.player_y + strafe_y * move_speed;
 
-		if (data->maps[(int)new_x][(int)(data->player.player_y)] == 0)
-			data->player.player_x = new_x;
-		if (data->maps[(int)(data->player.player_x)][(int)new_y] == 0)
-			data->player.player_y = new_y;
+		move(new_x, new_y, data);
 	}
 
 	// rotate to right
@@ -945,10 +1006,9 @@ void move_player(t_data *data)
 int render(t_data *data)
 {
 	// clear_image(data);
+	move_player(data);
 	draw_background(data);
 	raycast(data);
-	move_player(data);
-	mlx_put_image_to_window(data->mlx, data->win, data->frame.img, 0, 0);
 
 	return (0);
 }
@@ -1008,10 +1068,12 @@ int main(int argc, char **argv)
 	if (!is_cub_file(argv[1]))
 		return (error_msg("Error\nNeed to be .cub file\n", 1)); //can be error
 	//TODO: Map parsing
+	ft_bzero(&data, sizeof(data));
 	init_data(&data); //can use ft_bzero to initiliaze data
 	if (map_read(&data, argv[1]) != 0)
 		return (1);
-
+	print_map(data.maps);
+	init_player(&data);
 	// for player movement
 	mlx_hook(data.win, 2, 1L<<0, key_press, &data);
 	mlx_hook(data.win, 3, 1L<<1, key_release, &data);
