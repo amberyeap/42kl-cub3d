@@ -6,11 +6,11 @@
 #    By: ayeap <ayeap@student.42kl.edu.my>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/04/29 12:06:13 by ayeap             #+#    #+#              #
-#    Updated: 2025/09/18 13:34:19 by ayeap            ###   ########.fr        #
+#    Updated: 2025/09/18 13:44:21 by ayeap            ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
-NAME = cub3d
+NAME = cub3D
 
 CC = cc
 CFLAGS = -Wall -Wextra -Werror -g3
