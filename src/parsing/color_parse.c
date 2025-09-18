@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   config_parse2.c                                    :+:      :+:    :+:   */
+/*   color_parse.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: muhabin- <muhabin-@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 15:18:45 by muhabin-          #+#    #+#             */
-/*   Updated: 2025/09/17 16:16:18 by muhabin-         ###   ########.fr       */
+/*   Updated: 2025/09/18 15:08:21 by muhabin-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,8 +37,10 @@ static int	color_component(char *rgb)
 	int		value;
 	int		j;
 
+	if (!rgb || rgb[0] == '\0')
+		return (0);
 	trimmed = ft_strtrim(rgb, " \t\n\r");
-	if (!trimmed)
+	if (!trimmed || trimmed[0] == '\0')
 		return (0);
 	j = 0;
 	while (trimmed[j])
@@ -60,6 +62,7 @@ static int	color_component(char *rgb)
 int	valid_color(char **rgb)
 {
 	int	i;
+
 
 	if (!rgb[0] || !rgb[1] || !rgb[2] || rgb[3])
 		return (0);

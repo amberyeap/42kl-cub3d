@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   map_validation.c                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ayeap <ayeap@student.42kl.edu.my>          +#+  +:+       +#+        */
+/*   By: muhabin- <muhabin-@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 19:32:01 by muhabin-          #+#    #+#             */
-/*   Updated: 2025/09/18 11:54:40 by ayeap            ###   ########.fr       */
+/*   Updated: 2025/09/18 15:23:28 by muhabin-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -92,6 +92,11 @@ void	find_player(t_data *data, char **map)
 			if (map[i][j] == 'N' || map[i][j] == 'S'
 				|| map[i][j] == 'E' || map[i][j] == 'W')
 			{
+				if (i == 0 || j == 0 || !map[i + 1] || !map[i][j + 1])
+					exit_error("Player placed at map edge");
+				if (map[i][j - 1] == '1' && map[i][j + 1] == '1'
+					&& map[i - 1][j] == '1' && map[i + 1][j] == '1')
+					exit_error("Player cannot spawn inside wall");
 				data->player.player_x = j;
 				data->player.player_y = i;
 				data->player.p_direction = map[i][j];
