@@ -6,7 +6,7 @@
 /*   By: ayeap <ayeap@student.42kl.edu.my>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/17 19:32:01 by muhabin-          #+#    #+#             */
-/*   Updated: 2025/09/18 11:54:40 by ayeap            ###   ########.fr       */
+/*   Updated: 2025/09/19 13:30:17 by ayeap            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,11 +15,11 @@
 void	flood_fill(t_data *data, char **map, int x, int y)
 {
 	if (x < 0 || y < 0 || !map[x] || y >= ft_strlen(map[x]))
-		exit_error("Invalid 1: Map is enclosed");
+		exit_error("Invalid 1: Map is not enclosed");
 	if (map[x][y] == '1' || map[x][y] == 'F')
 		return ;
 	if (map[x][y] == ' ')
-		exit_error("Invalid 2: Map is enclosed");
+		exit_error("Invalid 2: Map is not enclosed");
 	map[x][y] = 'F';
 	flood_fill(data, map, x + 1, y);
 	flood_fill(data, map, x - 1, y);
