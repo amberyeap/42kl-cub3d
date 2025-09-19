@@ -139,11 +139,6 @@ typedef struct s_data
 
 	void		*mlx; // mlx void pointer
 	void		*win; // window pointer for mlx
-	void		*img;
-	char		*addr;
-	int			bpp; // bits per pixel
-	int			line_len;
-	int			endian;
 	t_img		frame;
 	t_img		textures[4];
 	t_key		keys;
